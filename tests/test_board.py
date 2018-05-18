@@ -37,10 +37,17 @@ class TestBoard(TestCase):
         board.mark_field(1, 1, P1)
         self.assertEqual(board.board[1][1], 1)
 
-    def test_assert_valid_move(self):
-        board = Board()
-        board.mark_field(1, 1, P1)
-        self.assertTrue(board.assert_valid_move(0, 0))
-        self.assertFalse(board.assert_valid_move(1, 1))
-        self.assertFalse(board.assert_valid_move(3, 3))
-        self.assertFalse(board.assert_valid_move(-1, -1))
+    def test_get_possible_moves(self):
+        # 0 X _
+        # _ X O
+        # X _ X
+        board = Board(np.array([[1,2,0], [0,2,1], [2,0,2]]))
+        moves = board.get_possible_moves()
+        self.assertIn(np.array([2,0]), moves)
+
+    def test_hash(self):
+        b1 = Board(np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
+        b2 = Board(np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
+        self.assertEqual(b1.__hash__(), b2.__hash__())
+        d = {b1: 3}
+        self.assertTrue(b1 in d)

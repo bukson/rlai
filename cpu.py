@@ -1,40 +1,38 @@
 import numpy as np
 
 from player import *
+from random import shuffle
 
 
-class RandomCpu:
+class Cpu:
 
     def __init__(self, board, p=P2):
         self.board = board
         self.player = p
+
+
+class RandomCpu(Cpu):
 
     def get_move(self):
-        x = np.random.randint(0, 3)
-        y = np.random.randint(0, 3)
-        if not self.board.assert_valid_move(x, y):
-            return self.get_move()
-        else:
-            return x, y
+        possible_moves = self.board.get_possible_moves()
+        np.random.shuffle(possible_moves)
+        return possible_moves[0]
 
 
-class MinMaxCpu:
-    def __init__(self, board, p=P2):
-        self.board = board
-        self.player = p
+class MinMaxCpu(Cpu):
 
     def get_move(self):
         moves = []
-        for x in range(3):
-            for y in range(3):
-                if self.board.assert_valid_move(x, y):
-                    self.board.mark_field(x, y, self.player)
-                    moves.append((self.min_max(self.board, oppositve(self.player)),(x,y)))
-                    self.board.mark_field(x, y, Empty)
+        for move in self.board.get_possible_moves():
+            x, y = move
+            self.board.mark_field(x, y, self.player)
+            moves.append((self.min_max(self.board, oppositve(self.player)), (x, y)))
+            self.board.mark_field(x, y, Empty)
+        shuffle(moves)
         if self.player == P1:
-            return max(moves)[1]
+            return max(moves, key=lambda m: m[0])[1]
         else:
-            return min(moves)[1]
+            return min(moves, key=lambda m: m[0])[1]
 
     @staticmethod
     def min_max(board, p: Player, depth=0) -> int:
@@ -45,13 +43,19 @@ class MinMaxCpu:
         if board.get_winner() == P2:
             return -10 + depth
         moves = []
-        for x in range(3):
-            for y in range(3):
-                if board.assert_valid_move(x, y):
-                    board.mark_field(x, y, p)
-                    moves.append((MinMaxCpu.min_max(board, oppositve(p), depth + 1),(x,y)))
-                    board.mark_field(x, y, Empty)
+        for move in board.get_possible_moves():
+            x, y = move
+            board.mark_field(x, y, p)
+            moves.append((MinMaxCpu.min_max(board, oppositve(p), depth + 1), (x, y)))
+            board.mark_field(x, y, Empty)
         if p == P1:
             return max(moves)[0]
         else:
             return min(moves)[0]
+
+
+class QLearningCPU(Cpu):
+
+    def __init__(self, board, p=P2):
+        super().__init__(board, p)
+        self.Q = {}

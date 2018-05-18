@@ -2,6 +2,8 @@ from unittest import *
 
 from board import Board
 from cpu import *
+from profiling import SimpleProfiler
+import numpy as np
 
 class TestCpu(TestCase):
 
@@ -30,3 +32,7 @@ class TestCpu(TestCase):
         board = Board(np.array([[1, 1, 0], [0, 0, 0], [2, 0, 0]]))
         best_move = MinMaxCpu(board, P2).get_move()
         self.assertEqual(best_move, (2,0))
+
+    def test_get_move3(self):
+        board = Board()
+        best_move = MinMaxCpu(board, P1).get_move()
