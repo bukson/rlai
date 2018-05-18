@@ -1,12 +1,5 @@
-from enum import IntEnum
-
 import numpy as np
-
-
-class Field(IntEnum):
-    Empty = 0
-    P1 = 1
-    P2 = 2
+from player import *
 
 
 class Board:
@@ -15,27 +8,40 @@ class Board:
         if board is not None:
             self.board = board
         else:
-            self.board = np.array(3 * [3 * [Field.Empty]])
+            self.board = np.array(3 * [3 * [Empty.number]])
 
-    def get_winner(self) -> Field:
+    def get_winner(self) -> Player:
         for i in range(3):
-            if np.array_equal(self.board[i, :], 3 * [Field.P1]):
-                return Field.P1
-            if np.array_equal(self.board[i, :], 3 * [Field.P2]):
-                return Field.P2
-            if np.array_equal(self.board[:, i], 3 * [Field.P1]):
-                return Field.P1
-            if np.array_equal(self.board[:, i], 3 * [Field.P2]):
-                return Field.P2
+            if np.array_equal(self.board[i, :], 3 * [P1.number]):
+                return P1
+            if np.array_equal(self.board[i, :], 3 * [P2.number]):
+                return P2
+            if np.array_equal(self.board[:, i], 3 * [P1.number]):
+                return P1
+            if np.array_equal(self.board[:, i], 3 * [P2.number]):
+                return P2
 
-        if np.array_equal(np.diag(self.board), 3 * [Field.P1]):
-            return Field.P1
-        if np.array_equal(np.diag(self.board,1), 3 * [Field.P2]):
-            return Field.P2
+        if np.array_equal(np.diag(self.board), 3 * [P1.number]):
+            return P1
+        if np.array_equal(np.diag(self.board, 1), 3 * [P2.number]):
+            return P2
 
-        if np.array_equal(np.rot90(self.board).diagonal(), 3 * [Field.P1]):
-            return Field.P1
-        if np.array_equal(np.rot90(self.board).diagonal(), 3 * [Field.P2]):
-            return Field.P2
+        if np.array_equal(np.rot90(self.board).diagonal(), 3 * [P1.number]):
+            return P1
+        if np.array_equal(np.rot90(self.board).diagonal(), 3 * [P2.number]):
+            return P2
 
-        return Field.Empty
+        if not np.isin(0, self.board):
+            return Empty
+
+        return None
+
+    def assert_valid_move(self, x, y):
+        if x > 2 or y > 2 or  x < 0 or y < 0:
+            return False
+        if self.board[y][x] != 0:
+            return False
+        return True
+
+    def mark_field(self, x, y, player):
+        self.board[y][x] = player.number
