@@ -43,7 +43,7 @@ class TestBoard(TestCase):
         # X _ X
         board = Board(np.array([[1,2,0], [0,2,1], [2,0,2]]))
         moves = board.get_possible_moves()
-        self.assertIn(np.array([2,0]), moves)
+        self.assertIn((2,0), moves)
 
     def test_hash(self):
         b1 = Board(np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
