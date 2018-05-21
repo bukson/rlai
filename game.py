@@ -68,22 +68,25 @@ class CpuGame:
             if winner is not None:
                 self.score[winner.number] += 1
                 if winner == P1:
-                    self.cpu1.reward(10)
-                    self.cpu2.reward(-10)
+                    self.cpu1.reward(1)
+                    self.cpu2.reward(-1)
                 elif winner == P2:
-                    self.cpu1.reward(-10)
-                    self.cpu2.reward(10)
+                    self.cpu1.reward(-1)
+                    self.cpu2.reward(1)
                 else:
-                    self.cpu1.reward(0)
-                    self.cpu2.reward(0)
+                    self.cpu1.reward(0.5)
+                    self.cpu2.reward(0.5)
                 return
-            if player == P1:
-                x, y = self.cpu1.get_move()
-                board.mark_field(x, y, P1)
-            if player == P2:
-                x, y = self.cpu2.get_move()
-                board.mark_field(x, y, P2)
-            player = oppositve(player)
+            else:
+                if player == P1:
+                    self.cpu2.reward(0)
+                    x, y = self.cpu1.get_move()
+                    board.mark_field(x, y, P1)
+                if player == P2:
+                    self.cpu1.reward(0)
+                    x, y = self.cpu2.get_move()
+                    board.mark_field(x, y, P2)
+                player = oppositve(player)
 
     def print_score(self):
         print(self.score)
@@ -93,6 +96,7 @@ class CpuGame:
             self.score[i] = 0
 
 
+
 if __name__ == '__main__':
     # game = Game(P1)
     # game.play()
@@ -100,15 +104,18 @@ if __name__ == '__main__':
     # game = CpuGame(RandomCpu(P1), QLearningCPU(P2, decay=0.99))
     print('Qlearn vs Qlearn')
     # game = CpuGame(QLearningCPU(P1, decay=1.0, epsilon=0.1), QLearningCPU(P2, decay=1.0, epsilon=0.1))
-    game = CpuGame(QLearningCPU(P1, decay=0.9999, epsilon=0.2), QLearningCPU(P2, decay=0.9999, epsilon=0.2))
+    game = CpuGame(QLearningCPU(P1, decay=0.99, epsilon=0.2), QLearningCPU(P2, decay=0.99, epsilon=0.2))
+    # game = CpuGame(RandomCpu(P1), QLearningCPU(P2, decay=0.9999, epsilon=0.2))
 
-    for _ in range(90):
+    for b in range(100):
         for i in range(1000):
             game.play()
-            game.cpu2.transfer_experience(game.cpu1.q)
+            # if b % 4 == 0:
+            #     game.cpu2.transfer_experience(game.cpu1.q)
+            #     game.cpu1.q = copy.deepcopy(game.cpu2.q)
         game.print_score()
         game.reset_score()
-        game.cpu1.q = copy.deepcopy(game.cpu2.q)
+        # game.cpu1.q = copy.deepcopy(game.cpu2.q)
     cpu2 = copy.deepcopy(game.cpu2)
     cpu1 = copy.deepcopy(game.cpu2)
 
@@ -120,14 +127,14 @@ if __name__ == '__main__':
     game.print_score()
     game.reset_score()
 
-    cpu2.epsilon = 0
-    cpu2.transfer_experience(cpu1.q)
-    print('Random vs Qlearn transfered')
-    game = CpuGame(RandomCpu(P1), copy.deepcopy(cpu2))
-    for i in range(20000):
-        game.play()
-    game.print_score()
-    game.reset_score()
+    # cpu2.epsilon = 0
+    # cpu2.transfer_experience(cpu1.q)
+    # print('Random vs Qlearn transfered')
+    # game = CpuGame(RandomCpu(P1), copy.deepcopy(cpu2))
+    # for i in range(20000):
+    #     game.play()
+    # game.print_score()
+    # game.reset_score()
 
     print('Minmax vs Qlearn')
 

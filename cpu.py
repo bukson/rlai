@@ -63,7 +63,7 @@ class MinMaxCpu(Cpu):
 
 class QLearningCPU(Cpu):
 
-    def __init__(self, p=P2, epsilon=0.2, alpha=0.2, gamma=0.9, decay=0.9):
+    def __init__(self, p=P2, epsilon=0.2, alpha=0.3, gamma=0.9, decay=0.9):
         super().__init__(p)
         self.q = {}  # (state, action) keys: Q values
         self.epsilon = epsilon  # e-greedy chance of random exploration
@@ -71,6 +71,8 @@ class QLearningCPU(Cpu):
         self.gamma = gamma  # discount factor for future reward
         self.decay = decay
         self.last_board = None
+        self.last_move = None
+        self.default_reward = 1.0
 
     def next_state(self, action: Tuple[int, int], board=None) -> int:
         if board is None:
@@ -83,7 +85,7 @@ class QLearningCPU(Cpu):
         return board.state() + str(self.player.number)
 
     def getQ(self, state: int):
-        return self.q.get(state, 1.0)
+        return self.q.get(state, self.default_reward)
 
     def get_move(self):
         return self.__get_move(self.board)
@@ -92,6 +94,7 @@ class QLearningCPU(Cpu):
         actions = board.get_possible_moves()
 
         if random.random() < self.epsilon:  # explore!
+            self.last_board = copy.deepcopy(board)
             self.last_move = random.choice(actions)
             return self.last_move
 
@@ -114,12 +117,15 @@ class QLearningCPU(Cpu):
             self.learn(self.last_board, self.last_move, value)
             # if self.epsilon > 0.002:
             self.epsilon = self.epsilon * self.decay
+            # self.default_reward = self.default_reward * self.decay
 
     def learn(self, state: Board, action: Tuple[int, int], reward: int):
         prev = self.getQ(self.get_state(state))
         possible_actions = state.get_possible_moves()
         maxqnew = max([self.getQ(self.next_state(a, state)) for a in possible_actions])
         self.q[self.next_state(action, state)] = prev + self.alpha * ((reward + self.gamma * maxqnew) - prev)
+        q = self.q
+        pass
 
     @staticmethod
     def _transfer_state(state: str) -> str:
