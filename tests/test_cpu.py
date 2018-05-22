@@ -11,7 +11,7 @@ class TestCpu(TestCase):
         # 0 X 0
         # 0 _ X
         # _ _ _
-        board = Board(np.array([[1, 2, 1], [1, 0, 2], [0, 0, 0]]))
+        board = Board([1, 2, 1, 1, 0, 2, 0, 0, 0])
         best_move = MinMaxCpu.min_max(board, P1)
         self.assertTrue(best_move > 0)
         best_move = MinMaxCpu.min_max(board, P2)
@@ -21,7 +21,7 @@ class TestCpu(TestCase):
         # 0 X _
         # 0 _ X
         # _ _ _
-        board = Board(np.array([[1, 2, 0], [1, 0, 2], [0, 0, 0]]))
+        board = Board([1, 2, 0, 1, 0, 2, 0, 0, 0])
         cpu = MinMaxCpu(P1)
         cpu.board = board
         best_move = cpu.get_move()
@@ -31,7 +31,7 @@ class TestCpu(TestCase):
         # 0 0 _
         # _ _ _
         # X _ _
-        board = Board(np.array([[1, 1, 0], [0, 0, 0], [2, 0, 0]]))
+        board = Board([1, 1, 0, 0, 0, 0, 2, 0, 0])
         cpu = MinMaxCpu(P2)
         cpu.board = board
         best_move = cpu.get_move()
@@ -40,8 +40,7 @@ class TestCpu(TestCase):
     def test_get_move3(self):
         board = Board()
         cpu = MinMaxCpu(P1)
-        cpu.board = board
-        cpu.get_move()
+        cpu.get_move(board)
 
     def test_transfer_state(self):
         state = '1201201201'

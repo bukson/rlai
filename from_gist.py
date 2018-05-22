@@ -1,3 +1,4 @@
+import copy
 import random
 
 
@@ -6,7 +7,7 @@ class TicTacToe:
         self.board = [' ']*9
         self.playerX, self.playerO = playerX, playerO
         # self.playerX_turn = random.choice([True, False])
-        self.playerX_turn = False
+        self.playerX_turn = True
         self.score = score
 
     def play_game(self):
@@ -27,7 +28,7 @@ class TicTacToe:
             if self.player_wins(char):
                 player.reward(1, self.board)
                 other_player.reward(-1, self.board)
-                if char == 'O':
+                if char == 'X':
                     self.score[1] += 1
                 else:
                     self.score[2] += 1
@@ -54,7 +55,7 @@ class TicTacToe:
     def display_board(self):
         row = " {} | {} | {}"
         hr = "\n-----------\n"
-        print (row + hr + row + hr + row).format(*self.board)
+        print((row + hr + row + hr + row).format(*self.board))
 
     def reset_score(self):
         self.score = {0:0, 1:0, 2:0}
@@ -104,10 +105,10 @@ class MinimaxPlayer(Player):
         return 'O' if char == 'X' else 'X'
 
     def move(self, board):
-        if tuple(board) in self.best_moves:
-            return random.choice(self.best_moves[tuple(board)])
+        # if tuple(board) in self.best_moves:
+        #     return random.choice(self.best_moves[tuple(board)])
         if len(self.available_moves(board)) == 9:
-            return random.choice([1,3,7,9])
+            return random.choice(range(1,10))
         best_yet = -2
         choices = []
         for move in self.available_moves(board):
@@ -129,6 +130,8 @@ class MinimaxPlayer(Player):
             return -1
         if self.board_full(board):
             return 0
+        if 'X' not in board and 'O' not in board:
+            return random.randint(1,9)
         for move in self.available_moves(board):
             board[move-1] = char
             val = self.minimax(board, self.other(char), alpha, beta)
@@ -246,17 +249,32 @@ for i in range(200):
 
 p2.epsilon = 0
 
-
-p1 = RandomPlayer()
+# gist_p1 = copy.deepcopy(p1)
+# p1 = RandomPlayer()
+# score = {0: 0, 1: 0, 2: 0}
+# for i in range(0,20000):
+#     t = TicTacToe(p1, p2, score)
+#     t.play_game()
+# print(score)
+#
+p1 = MinimaxPlayer()
 score = {0: 0, 1: 0, 2: 0}
-for i in range(0,20000):
+for i in range(0,1000):
     t = TicTacToe(p1, p2, score)
     t.play_game()
 print(score)
 
+# p1 = MinimaxPlayer()
+# score = {0: 0, 1: 0, 2: 0}
+# for i in range(0,20000):
+#     t = TicTacToe(p1, p2, score)
+#     t.play_game()
+# print(score)
+
 # p1 = Player()
 # p2.epsilon = 0
 #
+# score = {0: 0, 1: 0, 2: 0}
 # while True:
-#     t = TicTacToe(p1, p2)
+#     t = TicTacToe(p1, p2, score)
 #     t.play_game()

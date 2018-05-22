@@ -11,15 +11,7 @@ class Game:
     def __init__(self, first_player=P1):
         self.board = Board()
         self.player = first_player
-        self.cpu = MinMaxCpu(self.board, oppositve(self.player))
-
-    def draw(self):
-        print()
-        for x in range(3):
-            for y in range(3):
-                print(players[self.board.board[x][y]].mark + ' ', end='')
-            print()
-        print()
+        self.cpu = MinMaxCpu(self.board, opposite(self.player))
 
     def get_human_move(self):
         while True:
@@ -31,12 +23,12 @@ class Game:
 
     def get_cpu_move(self):
         x, y = self.cpu.get_move()
-        self.board.mark_field(x, y, oppositve(self.player))
+        self.board.mark_field(x, y, opposite(self.player))
 
     def play(self):
         player = self.player
         while True:
-            self.draw()
+            self.board.draw()
             winner = self.board.get_winner()
             if winner is not None:
                 if winner == Empty:
@@ -48,45 +40,35 @@ class Game:
                 self.get_human_move()
             else:
                 self.get_cpu_move()
-            player = oppositve(player)
+            player = opposite(player)
 
 
 class CpuGame:
 
     def __init__(self, cpu1, cpu2):
         self.score = {0: 0, 1: 0, 2: 0}
-        self.cpu1 = cpu1
-        self.cpu2 = cpu2
+        self.players = {P1: cpu1, P2: cpu2}
 
     def play(self):
         board = Board()
         player = P1
-        self.cpu1.board = board
-        self.cpu2.board = board
+        self.players[P1].start_game()
+        self.players[P2].start_game()
         while True:
+            x,y = self.players[player].get_move(board)
+            board.mark_field(x, y, player)
             winner = board.get_winner()
             if winner is not None:
                 self.score[winner.number] += 1
-                if winner == P1:
-                    self.cpu1.reward(1)
-                    self.cpu2.reward(-1)
-                elif winner == P2:
-                    self.cpu1.reward(-1)
-                    self.cpu2.reward(1)
+                if winner == Empty:
+                    self.players[player].reward(0.5, board)
+                    self.players[opposite(player)].reward(0.5, board)
                 else:
-                    self.cpu1.reward(0.5)
-                    self.cpu2.reward(0.5)
+                    self.players[winner].reward(1, board)
+                    self.players[opposite(winner)].reward(-1, board)
                 return
-            else:
-                if player == P1:
-                    self.cpu2.reward(0)
-                    x, y = self.cpu1.get_move()
-                    board.mark_field(x, y, P1)
-                if player == P2:
-                    self.cpu1.reward(0)
-                    x, y = self.cpu2.get_move()
-                    board.mark_field(x, y, P2)
-                player = oppositve(player)
+            self.players[opposite(player)].reward(0,board)
+            player = opposite(player)
 
     def print_score(self):
         print(self.score)
@@ -104,22 +86,24 @@ if __name__ == '__main__':
     # game = CpuGame(RandomCpu(P1), QLearningCPU(P2, decay=0.99))
     print('Qlearn vs Qlearn')
     # game = CpuGame(QLearningCPU(P1, decay=1.0, epsilon=0.1), QLearningCPU(P2, decay=1.0, epsilon=0.1))
-    game = CpuGame(QLearningCPU(P1, decay=0.99, epsilon=0.2), QLearningCPU(P2, decay=0.99, epsilon=0.2))
-    # game = CpuGame(RandomCpu(P1), QLearningCPU(P2, decay=0.9999, epsilon=0.2))
+    game = CpuGame(QLearningCPU(P1, decay=1.0), QLearningCPU(P2, decay=1.0))
+    # game = CpuGame(RandomCpu(P1), QLearningCPU(P2, decay=0.9, epsilon=1.0))
 
-    for b in range(100):
+    r = 10
+    for b in range(r):
+        print (b / r, '%')
         for i in range(1000):
             game.play()
-            # if b % 4 == 0:
-            #     game.cpu2.transfer_experience(game.cpu1.q)
-            #     game.cpu1.q = copy.deepcopy(game.cpu2.q)
         game.print_score()
+        print('cpu1.q:', len(game.cpu1.q))
+        print('cpu2.q:', len(game.cpu2.q))
         game.reset_score()
         # game.cpu1.q = copy.deepcopy(game.cpu2.q)
     cpu2 = copy.deepcopy(game.cpu2)
-    cpu1 = copy.deepcopy(game.cpu2)
+    cpu1 = copy.deepcopy(game.cpu1)
 
     cpu2.epsilon = 0
+    cpu2.min_epsilon = 0
     print('Random vs Qlearn')
     game = CpuGame(RandomCpu(P1), copy.deepcopy(cpu2))
     for i in range(20000):
@@ -138,11 +122,11 @@ if __name__ == '__main__':
 
     print('Minmax vs Qlearn')
 
-    game = CpuGame(MinMaxCpu(P1), copy.deepcopy(cpu2))
-    for i in range(200):
-        game.play()
-    game.print_score()
-    game.reset_score()
+    # game = CpuGame(MinMaxCpu(P1), copy.deepcopy(cpu2))
+    # for i in range(200):
+    #     game.play()
+    # game.print_score()
+    # game.reset_score()
 
     #
     # game = CpuGame(MinMaxCpu(P1), cpu2)

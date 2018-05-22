@@ -6,51 +6,51 @@ from player import *
 
 class Board:
 
-    def __init__(self, board: np.array = None):
+    def __init__(self, board: List = None):
         if board is not None:
             self.board = board
         else:
-            self.board = np.array(3 * [3 * [Empty.number]])
+            self.board = [0 for _ in range(9)]
 
     def get_winner(self) -> Player:
         for i in range(3):
-            if self.board[i][0] == self.board[i][1] == self.board[i][2] != Empty.number:
-                return players[self.board[i][0]]
+            if self.board[3*i] == self.board[3*i + 1] == self.board[3*i + 2] != Empty.number:
+                return players[self.board[3*i]]
 
-            if self.board[0][i] == self.board[1][i] == self.board[2][i] != Empty.number:
-                return players[self.board[0][i]]
+            if self.board[i] == self.board[i + 3] == self.board[i + 6] != Empty.number:
+                return players[self.board[i]]
 
-        if self.board[0, 0] == self.board[1, 1] == self.board[2, 2] != Empty.number:
-            return players[self.board[0][0]]
+        if self.board[0] == self.board[4] == self.board[8] != Empty.number:
+            return players[self.board[0]]
 
-        if self.board[2, 0] == self.board[1, 1] == self.board[0, 2] != Empty.number:
-            return players[self.board[2][0]]
+        if self.board[2] == self.board[4] == self.board[6] != Empty.number:
+            return players[self.board[2]]
 
-        if 0 not in self.board[:, 0] and 0 not in self.board[:, 1] and 0 not in self.board[:, 2]:
+        if 0 not in self.board:
             return Empty
 
         return None
 
     def get_possible_moves(self) -> List[tuple]:
         pm = []
-        for i in range(3):
-            for j in range(3):
-                if self.board[i][j] == 0:
-                    pm.append((j, i))
+        for y in range(3):
+            for x in range(3):
+                if self.board[x + 3*y] == 0:
+                    pm.append((x, y))
         return pm
 
     def mark_field(self, x: int, y: int, player: Player):
-        self.board[y][x] = player.number
-
-    def state(self):
-        return ''.join(map(str, self.board.flatten()))
+        self.board[x + 3 * y] = player.number
 
     @staticmethod
     def from_state(state: str):
-        new_board = np.array(3 * [3 * [Empty.number]])
-        for index, field in enumerate(state[:-1]):
-            x = index % 3
-            y = index // 3
-            new_board[y, x] = int(field)
-        return new_board
+        return list(map(int, state))
+
+    def draw(self):
+        print()
+        for x in range(3):
+            for y in range(3):
+                print(players[self.board[x + 3*y]].mark + ' ', end='')
+            print()
+        print()
 

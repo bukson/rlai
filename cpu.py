@@ -1,4 +1,5 @@
 import copy
+from collections import defaultdict
 from typing import Tuple
 
 import numpy as np
@@ -12,29 +13,39 @@ class Cpu:
 
     def __init__(self, p=P2):
         self.player = p
-        self.board = None
 
-    def reward(self, value: int):
+    def reward(self, value: int, board):
+        pass
+
+    def get_possible_moves(self, board: Tuple):
+        pm = []
+        for y in range(3):
+            for x in range(3):
+                if board[x + 3 * y] == 0:
+                    pm.append((x, y))
+        return pm
+
+    def start_game(self):
         pass
 
 
 class RandomCpu(Cpu):
 
-    def get_move(self):
-        return random.choice(self.board.get_possible_moves())
+    def get_move(self, board):
+        return random.choice(board.get_possible_moves())
 
 
 class MinMaxCpu(Cpu):
 
-    def get_move(self):
-        if np.array_equal(self.board.board, np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])):
+    def get_move(self, board):
+        if not any(board.board):
             return random.randint(0, 2), random.randint(0, 2)
         moves = []
-        for move in self.board.get_possible_moves():
+        for move in self.get_possible_moves(board.board):
             x, y = move
-            self.board.mark_field(x, y, self.player)
-            moves.append((self.min_max(self.board, oppositve(self.player)), (x, y)))
-            self.board.mark_field(x, y, Empty)
+            board.mark_field(x, y, self.player)
+            moves.append((self.min_max(board, opposite(self.player)), (x, y)))
+            board.mark_field(x, y, Empty)
         random.shuffle(moves)
         if self.player == P1:
             return max(moves, key=lambda m: m[0])[1]
@@ -53,7 +64,7 @@ class MinMaxCpu(Cpu):
         for move in board.get_possible_moves():
             x, y = move
             board.mark_field(x, y, p)
-            moves.append(MinMaxCpu.min_max(board, oppositve(p), depth + 1))
+            moves.append(MinMaxCpu.min_max(board, opposite(p), depth + 1))
             board.mark_field(x, y, Empty)
         if p == P1:
             return max(moves)
@@ -63,9 +74,9 @@ class MinMaxCpu(Cpu):
 
 class QLearningCPU(Cpu):
 
-    def __init__(self, p=P2, epsilon=0.2, alpha=0.3, gamma=0.9, decay=0.9):
+    def __init__(self, p=P2, epsilon=0.2, alpha=0.3, gamma=0.9, decay=0.9, min_epsilon=0.1):
         super().__init__(p)
-        self.q = {}  # (state, action) keys: Q values
+        self.q = {}  # state,action: reward
         self.epsilon = epsilon  # e-greedy chance of random exploration
         self.alpha = alpha  # learning rate
         self.gamma = gamma  # discount factor for future reward
@@ -73,32 +84,26 @@ class QLearningCPU(Cpu):
         self.last_board = None
         self.last_move = None
         self.default_reward = 1.0
+        self.min_epsion = min_epsilon
 
-    def next_state(self, action: Tuple[int, int], board=None) -> int:
-        if board is None:
-            board = self.board
-        next_board = copy.deepcopy(board)
-        next_board.mark_field(*action, self.player)
-        return self.get_state(next_board)
+    def start_game(self):
+        self.last_board = (0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.last_move = None
 
-    def get_state(self, board):
-        return board.state() + str(self.player.number)
+    def getQ(self, state, action) -> float:
+        if self.q.get((state, action)) is None:
+            self.q[(state, action)] = self.default_reward
+        return self.q[(state, action)]
 
-    def getQ(self, state: int):
-        return self.q.get(state, self.default_reward)
-
-    def get_move(self):
-        return self.__get_move(self.board)
-
-    def __get_move(self, board):
-        actions = board.get_possible_moves()
+    def get_move(self, board):
+        self.last_board = tuple(board.board)
+        actions = self.get_possible_moves(self.last_board)
 
         if random.random() < self.epsilon:  # explore!
-            self.last_board = copy.deepcopy(board)
             self.last_move = random.choice(actions)
             return self.last_move
 
-        qs = [self.getQ(self.next_state(a)) for a in actions]
+        qs = [self.getQ(self.last_board, a) for a in actions]
         max_q = max(qs)
 
         if qs.count(max_q) > 1:
@@ -108,43 +113,18 @@ class QLearningCPU(Cpu):
         else:
             i = qs.index(max_q)
 
-        self.last_board = copy.deepcopy(board)
         self.last_move = actions[i]
         return actions[i]
 
-    def reward(self, value: int):
+    def reward(self, value: int, board):
         if self.last_move:
-            self.learn(self.last_board, self.last_move, value)
-            # if self.epsilon > 0.002:
-            self.epsilon = self.epsilon * self.decay
-            # self.default_reward = self.default_reward * self.decay
+            self.learn(self.last_board, self.last_move, value, tuple(board.board))
 
-    def learn(self, state: Board, action: Tuple[int, int], reward: int):
-        prev = self.getQ(self.get_state(state))
-        possible_actions = state.get_possible_moves()
-        maxqnew = max([self.getQ(self.next_state(a, state)) for a in possible_actions])
-        self.q[self.next_state(action, state)] = prev + self.alpha * ((reward + self.gamma * maxqnew) - prev)
-        q = self.q
-        pass
-
-    @staticmethod
-    def _transfer_state(state: str) -> str:
-        new_state = []
-        for s in state:
-            if s == '1':
-                new_state.append('2')
-            elif s == '2':
-                new_state.append('1')
-            else:
-                new_state.append('0')
-        return ''.join(new_state)
-
-    def transfer_experience(self, transfer_q):
-        new_q = {}
-        for state,reward in self.q.items():
-            new_q[state] = reward
-            new_q[self._transfer_state(state)] = reward
-        for state,reward in transfer_q.items():
-            new_q[state] = reward
-            new_q[self._transfer_state(state)] = reward
-        self.q = new_q
+    def learn(self, state: Tuple, action: Tuple[int, int], reward: int, result_state: Tuple):
+        state_reward = self.getQ(state, action)
+        possible_actions = self.get_possible_moves(state)
+        maxqnew = max([self.getQ(result_state, action) for action in possible_actions])
+        new_reward = state_reward + self.alpha * ((reward + self.gamma * maxqnew) - state_reward)
+        self.q[(tuple(state), action)] = new_reward
+        # q = self.q
+        # pass
